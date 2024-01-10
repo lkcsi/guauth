@@ -1,6 +1,8 @@
 package service
 
 import (
+	"os"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lkcsi/goauth/custerror"
 	"github.com/lkcsi/goauth/entity"
@@ -37,7 +39,8 @@ func (u *inMemoryUserService) Login(requser *entity.User) (string, error) {
 		"username": user.Username,
 	})
 
-	jwtToken, err := token.SignedString([]byte("not_so_scret"))
+	secret := os.Getenv("AUTH_SECRET")
+	jwtToken, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
