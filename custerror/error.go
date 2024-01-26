@@ -24,7 +24,7 @@ func NotFoundError(username string) CustError {
 	return &custError{404, fmt.Sprintf("user with username: %s is not found", username)}
 }
 
-func OccupiedFoundError(username string) CustError {
+func OccupiedUsernameError(username string) CustError {
 	return &custError{400, fmt.Sprintf("username: %s has already been in use", username)}
 }
 

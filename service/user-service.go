@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lkcsi/goauth/custerror"
 	"github.com/lkcsi/goauth/entity"
+	"github.com/lkcsi/goauth/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,21 +17,17 @@ type UserService interface {
 }
 
 type inMemoryUserService struct {
-	users map[string]entity.User
+	userRepository repository.UserRepository
 }
 
-func (u *inMemoryUserService) FindByUsername(username string) (*entity.User, error) {
-	user, ok := u.users[username]
-	if !ok {
-		return nil, custerror.NotFoundError(username)
-	}
-	return &user, nil
+func (service *inMemoryUserService) FindByUsername(username string) (*entity.User, error) {
+	return service.userRepository.FindByUsername(username)
 }
 
-func (u *inMemoryUserService) Login(requser *entity.User) (string, error) {
-	user, ok := u.users[requser.Username]
-	if !ok {
-		return "", custerror.NotFoundError(requser.Username)
+func (service *inMemoryUserService) Login(requser *entity.User) (string, error) {
+	user, err := service.userRepository.FindByUsername(requser.Username)
+	if err != nil {
+		return "", err
 	}
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(requser.Password)) != nil {
 		return "", custerror.InvalidPasswordError()
@@ -47,24 +44,19 @@ func (u *inMemoryUserService) Login(requser *entity.User) (string, error) {
 	return jwtToken, nil
 }
 
-func (u *inMemoryUserService) Save(userRequest *entity.User) (*entity.User, error) {
-	_, exist := u.users[userRequest.Username]
-	if exist {
-		return nil, custerror.OccupiedFoundError(userRequest.Username)
-	}
+func (service *inMemoryUserService) Save(userRequest *entity.User) (*entity.User, error) {
 	pwd, err := bcrypt.GenerateFromPassword([]byte(userRequest.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 	user := entity.User{Username: userRequest.Username, Password: string(pwd)}
-	u.users[user.Username] = user
-
+	err = service.userRepository.Save(&user)
+	if err != nil {
+		return nil, err
+	}
 	return &user, nil
 }
 
-func NewInMemoryUserService() UserService {
-	u := make(map[string]entity.User)
-	u["roland"] = entity.User{Username: "roland", Password: "password"}
-
-	return &inMemoryUserService{users: u}
+func NewUserService(repo *repository.UserRepository) UserService {
+	return &inMemoryUserService{userRepository: *repo}
 }
