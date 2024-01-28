@@ -1,0 +1,14 @@
+version: '3.3'
+services:
+  users_api:
+    build: .
+    networks:
+      - bookstore
+    volumes:
+      - ./:/app
+    ports:
+      - "8081:8081"
+
+networks:
+  bookstore:
+    external: true

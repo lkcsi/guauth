@@ -2,6 +2,7 @@ package service
 
 import (
 	"os"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lkcsi/goauth/custerror"
@@ -34,6 +35,7 @@ func (service *inMemoryUserService) Login(requser *entity.User) (string, error) 
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": user.Username,
+		"exp":      time.Now().Add(time.Minute * 15).Unix(),
 	})
 
 	secret := os.Getenv("AUTH_SECRET")
